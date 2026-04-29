@@ -21,8 +21,6 @@ def reset():
         connection.execute(
             sqlalchemy.text(
                 """
-                UPDATE global_inventory SET 
-                gold = 100
                 """
             )
         )
