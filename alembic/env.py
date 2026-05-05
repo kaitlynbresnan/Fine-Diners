@@ -1,26 +1,28 @@
 from logging.config import fileConfig
 import os
 
-from sqlalchemy import engine_from_config, pool
+from sqlalchemy import engine_from_config, pool, create_engine
 from alembic import context
-
-import re
-from sqlalchemy import make_url
 
 # Alembic Config object
 config = context.config
 
-# Load DB URI from environment and override config
-raw_url = os.getenv("POSTGRES_URI")
-
-if raw_url:
-    database_url = make_url(raw_url)
-    final_url = database_url.render_as_string(hide_password=False).replace("%", "%%")
-    config.set_main_option("sqlalchemy.url", final_url)
-
-# Set up logging
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
+
+# Load DB URI from environment and override config
+def get_url():
+    url = os.getenv("POSTGRES_URI") or os.getenv("postgres_uri")
+    
+    if not url:
+        raise ValueError("Database URI not found! Check Render Environment Variable names.")
+
+    if url.startswith("postgres://"):
+        url = url.replace("postgres://", "postgresql+psycopg://", 1)
+    elif url.startswith("postgresql://"):
+        url = url.replace("postgresql://", "postgresql+psycopg://", 1)
+
+    return url.replace("%", "%%")
 
 # Import your metadata (for `--autogenerate`)
 # from app.db import Base
@@ -29,7 +31,7 @@ target_metadata = None  # or Base.metadata
 
 def run_migrations_offline() -> None:
     """Run migrations in 'offline' mode."""
-    url = config.get_main_option("sqlalchemy.url")
+    url = get_url()
     context.configure(
         url=url,
         target_metadata=target_metadata,
@@ -43,12 +45,8 @@ def run_migrations_offline() -> None:
 
 def run_migrations_online() -> None:
     """Run migrations in 'online' mode."""
-    configuration = config.get_section(config.config_ini_section)
-    if not configuration:
-        raise Exception("No config section for Alembic")
-    connectable = engine_from_config(
-        configuration,
-        prefix="sqlalchemy.",
+    connectable = create_engine(
+        get_url(),
         poolclass=pool.NullPool,
     )
 
