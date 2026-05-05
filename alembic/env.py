@@ -8,18 +8,18 @@ from alembic import context
 config = context.config
 
 # Load DB URI from environment and override config
-config.set_main_option(
-    "sqlalchemy.url",
-    os.getenv(
-        "POSTGRES_URI"
-    ),
-)
+database_url = os.getenv("POSTGRES_URI")
 
-if not "sqlalchemy.url":
+if not database_url:
     raise ValueError("Render cannot find the postgres_uri vairable")
 
-if "%%2E" not in "sqlalchemy.url" and "." in "sqlalchemy.url".split('@')[0]:
-    "sqlalchemy.url" = "sqlalchemy.url".replace(".", "%%2E", 1)
+if "%%2E" not in database_url and "." in database_url.split('@')[0]:
+    parts = database_url.split('@')
+    if "." in parts[0]:
+        parts[0] = parts[0].replace(".", "%%2E", 1)
+        db_url = "@".join(parts)
+
+config.set_main_option("sqlalchemy.url", database_url)
 
 # Set up logging
 if config.config_file_name is not None:
