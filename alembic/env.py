@@ -44,15 +44,28 @@ def run_migrations_offline() -> None:
 
 
 def run_migrations_online() -> None:
-    """Run migrations in 'online' mode."""
+    from sqlalchemy import URL
+    
+    cmd_url = URL.create(
+        drivername="postgresql+psycopg",
+        username="postgres.sqpjgfakuiaeztzpoizd",
+        password="finediners",
+        host="aws-1-us-west-2.pooler.supabase.com",
+        port=5432,
+        database="postgresfd",
+    )
+
+    # 2. Create the engine using this object, NOT a string from os.getenv
     connectable = create_engine(
-        get_url(),
+        cmd_url,
         poolclass=pool.NullPool,
     )
 
     with connectable.connect() as connection:
-        context.configure(connection=connection, target_metadata=target_metadata)
-
+        context.configure(
+            connection=connection, 
+            target_metadata=target_metadata
+        )
         with context.begin_transaction():
             context.run_migrations()
 
