@@ -11,9 +11,15 @@ config = context.config
 config.set_main_option(
     "sqlalchemy.url",
     os.getenv(
-        "POSTGRES_URI", "postgresql+psycopg://myuser:mypassword@localhost/mydatabase"
+        "POSTGRES_URI"
     ),
 )
+
+if not "sqlalchemy.url":
+    raise ValueError("Render cannot find the postgres_uri vairable")
+
+if "%%2E" not in "sqlalchemy.url" and "." in "sqlalchemy.url".split('@')[0]:
+    "sqlalchemy.url" = "sqlalchemy.url".replace(".", "%%2E", 1)
 
 # Set up logging
 if config.config_file_name is not None:
