@@ -179,3 +179,64 @@ def get_review(review_id: int):
             )
 
     return dict(row)
+
+class ReplyRequest(BaseModel):
+    user_id: str
+    reply: str
+
+
+class ReplyResponse(BaseModel):
+    reply_id: int
+    success: bool
+
+
+class ReportRequest(BaseModel):
+    user_id: str
+    reason: str
+
+
+class ReportResponse(BaseModel):
+    report_id: int
+    success: bool
+
+
+@router.post("/{review_id}/reply", response_model=ReplyResponse)
+def reply_to_review(review_id: int, reply_request: ReplyRequest):
+    with db.engine.begin() as connection:
+        row = connection.execute(
+            sqlalchemy.text(
+                """
+                INSERT INTO owner_replies (review_id, user_id, reply)
+                VALUES (:review_id, :user_id, :reply)
+                RETURNING reply_id
+                """
+            ),
+            {
+                "review_id": review_id,
+                "user_id": reply_request.user_id,
+                "reply": reply_request.reply,
+            },
+        ).one()
+
+    return ReplyResponse(reply_id=row.reply_id, success=True)
+
+
+@router.post("/{review_id}/report", response_model=ReportResponse)
+def report_review(review_id: int, report_request: ReportRequest):
+    with db.engine.begin() as connection:
+        row = connection.execute(
+            sqlalchemy.text(
+                """
+                INSERT INTO review_reports (review_id, user_id, reason)
+                VALUES (:review_id, :user_id, :reason)
+                RETURNING report_id
+                """
+            ),
+            {
+                "review_id": review_id,
+                "user_id": report_request.user_id,
+                "reason": report_request.reason,
+            },
+        ).one()
+
+    return ReportResponse(report_id=row.report_id, success=True)
