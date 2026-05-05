@@ -4,22 +4,19 @@ import os
 from sqlalchemy import engine_from_config, pool
 from alembic import context
 
+import re
+from sqlalchemy import make_url
+
 # Alembic Config object
 config = context.config
 
 # Load DB URI from environment and override config
-database_url = os.getenv("POSTGRES_URI")
+raw_url = os.getenv("POSTGRES_URI")
 
-if not database_url:
-    raise ValueError("Render cannot find the postgres_uri vairable")
-
-if "%%2E" not in database_url and "." in database_url.split('@')[0]:
-    parts = database_url.split('@')
-    if "." in parts[0]:
-        parts[0] = parts[0].replace(".", "%%2E", 1)
-        db_url = "@".join(parts)
-
-config.set_main_option("sqlalchemy.url", database_url)
+if raw_url:
+    database_url = make_url(raw_url)
+    final_url = database_url.render_as_string(hide_password=False).replace("%", "%%")
+    config.set_main_option("sqlalchemy.url", final_url)
 
 # Set up logging
 if config.config_file_name is not None:
