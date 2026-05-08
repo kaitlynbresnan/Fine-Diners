@@ -17,7 +17,7 @@ class ReviewRequest(BaseModel):
     service_score: Optional[float] = None
     romantic_score: Optional[float] = None
     pricing_score: Optional[float] = None
-    photos: List[str] = []
+    photos: List[str] = Field(default_factory=list)
 
 
 class ReviewResponse(BaseModel):
@@ -156,6 +156,45 @@ def delete_review(review_id: int):
             )
 
     return SuccessResponse(success=True)
+
+class ReviewSearchResult(BaseModel):
+    review_id: int
+    review_name: str
+    user_name: str
+    timestamp: str
+
+
+class ReviewSearchResponse(BaseModel):
+    previous: Optional[str] = None
+    next: Optional[str] = None
+    results: List[ReviewSearchResult]
+
+
+@router.get("/search/", response_model=ReviewSearchResponse)
+def search_reviews(
+    user_name: str = "",
+    restaurant_name: str = "",
+):
+    with db.engine.begin() as connection:
+        rows = connection.execute(
+            sqlalchemy.text(
+                """
+                SELECT
+                    review_id,
+                    description AS review_name,
+                    'test_user' AS user_name,
+                    created_at::text AS timestamp
+                FROM reviews
+                ORDER BY created_at DESC
+                """
+            )
+        ).mappings().all()
+
+    return ReviewSearchResponse(
+        previous=None,
+        next=None,
+        results=[ReviewSearchResult(**dict(row)) for row in rows],
+    )
 
 
 @router.get("/{review_id}")
