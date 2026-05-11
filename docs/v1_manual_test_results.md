@@ -1,5 +1,5 @@
 # Example workflow
-As a reviewer, I want to be able to write, edit and/or delete a review, so that I can share/update my experience and opinions.
+Sally visits a restaurant and wants to leave a review.
 
 # Testing results
 1. curl -X 'POST' \
