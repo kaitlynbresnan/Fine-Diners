@@ -92,9 +92,9 @@ def search_restaurants(
         FROM restaurants
         WHERE (:restaurant_name = '' OR name ILIKE :restaurant_name_filter)
           AND (:cuisine = '' OR cuisine ILIKE :cuisine_filter)
-          AND (:price_max::int IS NULL OR price_range <= :price_max::int)
-          AND (:allergen_free::boolean IS NULL OR allergen_free_options = :allergen_free::boolean)
-          AND (:allows_animals::boolean IS NULL OR allows_animals = :allows_animals::boolean)
+          AND (CAST(:price_max AS INT) IS NULL OR price_range <= CAST(:price_max AS INT))
+          AND (CAST(:allergen_free AS BOOLEAN) IS NULL OR allergen_free_options = CAST(:allergen_free AS BOOLEAN))
+          AND (CAST(:allows_animals AS BOOLEAN) IS NULL OR allows_animals = CAST(:allows_animals AS BOOLEAN))
         ORDER BY price_range ASC
     """
 
