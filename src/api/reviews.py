@@ -3,7 +3,7 @@ from pydantic import BaseModel, Field
 from typing import List, Optional
 import sqlalchemy
 from src import database as db
-import restaurants
+from restaurants import RestaurantRequest
 
 router = APIRouter(
     prefix="/reviews",
@@ -12,8 +12,7 @@ router = APIRouter(
 
 
 class ReviewRequest(BaseModel):
-    restaurant: restaurants.restaurant_id
-    restaurant_name: restaurants.name
+    restaurant: RestaurantRequest.restaurant_id
     rating: Optional[float] = Field(default=None)
     description: str
     food_quality_score: Optional[float] = None
@@ -52,8 +51,7 @@ def write_review(review_id: int, review: ReviewRequest):
                 """
                 INSERT INTO reviews (
                     review_id,
-                    restaurant
-                    restaurant_name
+                    restaurant,
                     rating,
                     description,
                     food_quality_score,
@@ -65,7 +63,6 @@ def write_review(review_id: int, review: ReviewRequest):
                 VALUES (
                     :review_id,
                     :restaurant,
-                    :restaurant_name,
                     :rating,
                     :description,
                     :food_quality_score,
@@ -79,7 +76,6 @@ def write_review(review_id: int, review: ReviewRequest):
             {
                 "review_id": review_id,
                 "restaurant": review.restaurant,
-                "restaurant_name": review.restaurant_name,
                 "rating": review.rating,
                 "description": review.description,
                 "food_quality_score": review.food_quality_score,

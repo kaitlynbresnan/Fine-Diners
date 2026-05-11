@@ -3,7 +3,7 @@ from pydantic import BaseModel
 from typing import Optional, List
 import sqlalchemy
 from src import database as db
-import reviews
+from reviews import ReviewRequest
 
 router = APIRouter(
     prefix="/restaurants",
@@ -18,7 +18,7 @@ class RestaurantRequest(BaseModel):
     price_range: int
     allergen_free_options: bool
     allows_animals: bool
-    reviews: List[reviews.review_id]
+    reviews: List[ReviewRequest.review_id]
 
 
 class RestaurantResponse(BaseModel):
@@ -34,7 +34,7 @@ class RestaurantSearchResult(BaseModel):
     price_range: int
     allergen_free_options: bool
     allows_animals: bool
-    reviews: List[reviews.review_id]
+    reviews: List[ReviewRequest.review_id]
 
 
 class RestaurantSearchResponse(BaseModel):
