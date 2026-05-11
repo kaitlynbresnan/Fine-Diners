@@ -3,7 +3,6 @@ from pydantic import BaseModel, Field
 from typing import List, Optional
 import sqlalchemy
 from src import database as db
-from .restaurants import RestaurantRequest
 
 router = APIRouter(
     prefix="/reviews",
@@ -12,7 +11,8 @@ router = APIRouter(
 
 
 class ReviewRequest(BaseModel):
-    restaurant: RestaurantRequest
+    restaurant_id: int
+    restaurant_name: str
     rating: Optional[float] = Field(default=None)
     description: str
     food_quality_score: Optional[float] = None
@@ -51,7 +51,7 @@ def write_review(review_id: int, review: ReviewRequest):
                 """
                 INSERT INTO reviews (
                     review_id,
-                    restaurant,
+                    restaurant_id,
                     rating,
                     description,
                     food_quality_score,
@@ -62,7 +62,7 @@ def write_review(review_id: int, review: ReviewRequest):
                 )
                 VALUES (
                     :review_id,
-                    :restaurant,
+                    :restaurant_id,
                     :rating,
                     :description,
                     :food_quality_score,
@@ -75,7 +75,7 @@ def write_review(review_id: int, review: ReviewRequest):
             ),
             {
                 "review_id": review_id,
-                "restaurant": review.restaurant,
+                "restaurant": review.restaurant_id,
                 "rating": review.rating,
                 "description": review.description,
                 "food_quality_score": review.food_quality_score,
@@ -190,9 +190,12 @@ def search_reviews(
                     'test_user' AS user_name,
                     created_at::text AS timestamp
                 FROM reviews
+                JOIN restaurants on reviews.restaurant_id = restaurants.id
+                WHERE restaurants.name ILIKE :name
                 ORDER BY created_at DESC
                 """
-            )
+            ),
+            {"name": f"%{restaurant_name}%"}
         ).mappings().all()
 
     return ReviewSearchResponse(
