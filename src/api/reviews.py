@@ -12,7 +12,7 @@ router = APIRouter(
 
 
 class ReviewRequest(BaseModel):
-    restaurant: RestaurantRequest.restaurant_id
+    restaurant: RestaurantRequest
     rating: Optional[float] = Field(default=None)
     description: str
     food_quality_score: Optional[float] = None
