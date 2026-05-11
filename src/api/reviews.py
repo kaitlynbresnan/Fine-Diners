@@ -3,7 +3,7 @@ from pydantic import BaseModel, Field
 from typing import List, Optional
 import sqlalchemy
 from src import database as db
-from restaurants import RestaurantRequest
+from .restaurants import RestaurantRequest
 
 router = APIRouter(
     prefix="/reviews",
