@@ -189,7 +189,7 @@ def search_reviews(
                     'test_user' AS user_name,
                     created_at::text AS timestamp
                 FROM reviews
-                JOIN restaurants on reviews.restaurant_id = restaurants.id
+                JOIN restaurants on reviews.restaurant_id = restaurants.restaurant_id
                 WHERE restaurants.name ILIKE :name
                 ORDER BY created_at DESC
                 """
