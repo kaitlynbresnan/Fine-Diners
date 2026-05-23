@@ -16,6 +16,6 @@ def reset():
         connection.execute(sqlalchemy.text("DELETE FROM review_reports"))
         connection.execute(sqlalchemy.text("DELETE FROM owner_replies"))
         connection.execute(sqlalchemy.text("DELETE FROM saved_restaurants"))
-        connection.execute(sqlalchemy.text("DELETE FROM restaurants"))
         connection.execute(sqlalchemy.text("DELETE FROM reviews"))
+        connection.execute(sqlalchemy.text("DELETE FROM restaurants"))
     return None
