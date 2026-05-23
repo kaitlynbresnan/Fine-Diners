@@ -1,4 +1,4 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException, Query, status
 from pydantic import BaseModel
 from typing import Optional, List
 import sqlalchemy
@@ -32,6 +32,11 @@ class RestaurantSearchResult(BaseModel):
     price_range: int
     allergen_free_options: bool
     allows_animals: bool
+    average_rating: Optional[float] = None
+    food_quality_score: Optional[float] = None
+    service_score: Optional[float] = None
+    romantic_score: Optional[float] = None
+    pricing_score: Optional[float] = None
 
 
 class RestaurantSearchResponse(BaseModel):
