@@ -222,6 +222,57 @@ Response:
 }
 ```
 
+### 3.3 Complex Endpoint: Get Top Restaurants - /restaurants/top/ (GET)
+
+Returns the top restaurants ranked by average review rating and food quality score. This endpoint is complex because it joins restaurants with reviews, calculates average scores, groups results by restaurant, and sorts restaurants by ranking.
+
+Query Parameters:
+- `limit` (optional): number of restaurants to return. Maximum value is 10.
+
+Response:
+```json
+{
+  "previous": null,
+  "next": null,
+  "results": [
+    {
+      "restaurant_id": "integer",
+      "name": "string",
+      "location": "string",
+      "cuisine": "string",
+      "price_range": "integer",
+      "allergen_free_options": "boolean",
+      "allows_animals": "boolean",
+      "average_rating": "number",
+      "food_quality_score": "number",
+      "service_score": "number",
+      "romantic_score": "number",
+      "pricing_score": "number"
+    }
+  ]
+}
+```
+### 3.4 Complex Endpoint: Restaurant Analytics - /restaurants/{restaurant_id}/analytics/ (GET)
+
+Returns analytics for a specific restaurant. This endpoint is complex because it joins restaurants, reviews, reports, and owner replies to calculate summary statistics for the restaurant owner.
+
+Response:
+```json
+{
+  "restaurant_id": "integer",
+  "restaurant_name": "string",
+  "review_count": "integer",
+  "average_rating": "number",
+  "average_food_quality_score": "number",
+  "average_service_score": "number",
+  "average_romantic_score": "number",
+  "average_pricing_score": "number",
+  "report_count": "integer",
+  "owner_reply_count": "integer"
+}
+```
+
+
 ---
 
 ## 4. Owner Interaction
@@ -241,6 +292,8 @@ Response:
   "success": "boolean"
 }
 ```
+
+
 
 ---
 
