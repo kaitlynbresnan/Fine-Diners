@@ -11,14 +11,14 @@ router = APIRouter(
 
 
 class ReviewRequest(BaseModel):
-    restaurant_id: int
-    rating: Optional[float] = Field(default=None)
-    description: str
-    food_quality_score: Optional[float] = None
-    service_score: Optional[float] = None
-    romantic_score: Optional[float] = None
-    pricing_score: Optional[float] = None
-    photos: List[str] = Field(default_factory=list)
+    restaurant_id: Optional[int] = None
+    rating: Optional[int] = Field(default=None, ge=0, le=5)
+    description: str = Field(min_length=5, max_length=1000)
+    food_quality_score: Optional[int] = Field(default=None, ge=0, le=5)
+    service_score: Optional[int] = Field(default=None, ge=0, le=5)
+    romantic_score: Optional[int] = Field(default=None, ge=0, le=5)
+    pricing_score: Optional[int] = Field(default=None, ge=0, le=5)
+    photos: List[str] = Field(default_factory=list, max_length=5)
 
 
 class ReviewResponse(BaseModel):
@@ -47,7 +47,7 @@ def write_review(review_id: int, review: ReviewRequest):
     with db.engine.begin() as connection:
         connection.execute(
             sqlalchemy.text(
-                """
+                                """
                 INSERT INTO reviews (
                     review_id,
                     restaurant_id,
@@ -108,6 +108,7 @@ def edit_review(review_id: int, review: ReviewRequest):
                 """
                 UPDATE reviews
                 SET
+                    restaurant_id = :restaurant_id,
                     rating = :rating,
                     description = :description,
                     food_quality_score = :food_quality_score,
@@ -121,6 +122,7 @@ def edit_review(review_id: int, review: ReviewRequest):
             ),
             {
                 "review_id": review_id,
+                "restaurant_id": review.restaurant_id,
                 "rating": review.rating,
                 "description": review.description,
                 "food_quality_score": review.food_quality_score,
@@ -163,6 +165,7 @@ def delete_review(review_id: int):
 
 class ReviewSearchResult(BaseModel):
     review_id: int
+    restaurant_id: Optional[int] = None
     review_name: str
     user_name: str
     timestamp: str
@@ -178,28 +181,42 @@ class ReviewSearchResponse(BaseModel):
 def search_reviews(
     user_name: str = "",
     restaurant_name: str = "",
+    search_page: int = 1,
+    page_size: int = 10,
 ):
+    offset = (search_page - 1) * page_size
+
     with db.engine.begin() as connection:
         rows = connection.execute(
             sqlalchemy.text(
                 """
                 SELECT
-                    review_id,
-                    description AS review_name,
+                    rv.review_id,
+                    rv.restaurant_id,
+                    rv.description AS review_name,
                     'test_user' AS user_name,
-                    created_at::text AS timestamp
-                FROM reviews
-                JOIN restaurants on reviews.restaurant_id = restaurants.restaurant_id
-                WHERE restaurants.name ILIKE :name
-                ORDER BY created_at DESC
+                    rv.created_at::text AS timestamp
+                FROM reviews rv
+                LEFT JOIN restaurants r ON rv.restaurant_id = r.restaurant_id
+                WHERE (:restaurant_name = '' OR r.name ILIKE :restaurant_name_filter)
+                  AND (:user_name = '' OR 'test_user' ILIKE :user_name_filter)
+                ORDER BY rv.created_at DESC
+                LIMIT :page_size OFFSET :offset
                 """
             ),
-            {"name": f"%{restaurant_name}%"}
+            {
+                "restaurant_name": restaurant_name,
+                "restaurant_name_filter": f"%{restaurant_name}%",
+                "user_name": user_name,
+                "user_name_filter": f"%{user_name}%",
+                "page_size": page_size,
+                "offset": offset,
+            },
         ).mappings().all()
 
     return ReviewSearchResponse(
-        previous=None,
-        next=None,
+        previous=f"/reviews/search/?search_page={search_page - 1}" if search_page > 1 else None,
+        next=f"/reviews/search/?search_page={search_page + 1}" if len(rows) == page_size else None,
         results=[ReviewSearchResult(**dict(row)) for row in rows],
     )
 

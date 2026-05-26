@@ -18,6 +18,10 @@ depends_on = None
 
 
 def upgrade():
+    op.add_column(
+        "reviews",
+        sa.Column("restaurant_id", sa.Integer(), nullable=True),
+    )
     op.create_table(
         "restaurants",
         sa.Column("restaurant_id", sa.Integer(), primary_key=True),
@@ -76,3 +80,4 @@ def downgrade():
     op.drop_table("owner_replies")
     op.drop_table("saved_restaurants")
     op.drop_table("restaurants")
+    op.drop_column("reviews", "restaurant_id")
