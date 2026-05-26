@@ -33,3 +33,4 @@ sequenceDiagram
 
     Note over Reviews,Reports: Review now has 4 reports, but moderation status may not be updated correctly
 ```
+To prevent this, the report transaction should lock the review row with SELECT ... FOR UPDATE before inserting the report and counting total reports. This works because the moderation decision belongs to one review, so locking that one review forces report-count decisions for that review to happen one at a time. We should also keep the report insert and report-count check inside one transaction.
