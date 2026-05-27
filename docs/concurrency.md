@@ -76,3 +76,42 @@ sequenceDiagram
 This is closest to a phantom read because both transactions make a decision based on the absence of a row, but another transaction inserts that row before the first transaction is safely finished. Under Read Committed, this can happen because each statement sees only data committed before that statement begins. Repeatable Read may prevent some repeated-read inconsistencies, but we can also prevent a duplicate inserts by using a constraint, like on (user_id, restaurant_id) being unique.
 
 
+---
+
+## 3. Dirty Read Risk: Searching Reviews While a Review Delete Is Still Uncommitted
+
+Our service allows users to delete reviews using `DELETE /reviews/{review_id}` and search reviews using `GET /reviews/search/`. A concurrency issue could happen if one transaction is deleting a review while another transaction searches for reviews at the same time.
+
+For example, suppose review 10 exists for McDonalds. User A starts deleting review 10, but the delete transaction has not committed yet. At the same time, User B searches for reviews for McDonalds. If the database allowed dirty reads, User B's search might read the uncommitted delete and return results as if review 10 no longer exists. If User A's delete later rolls back, User B saw data that was never actually committed.
+
+```mermaid
+sequenceDiagram
+    participant UserA
+    participant UserB
+    participant API
+    participant DBMS
+    participant Reviews
+
+    UserA->>API: DELETE /reviews/10
+    API->>DBMS: Begin T1
+    DBMS->>Reviews: T1 deletes review 10 but does not commit yet
+
+    UserB->>API: GET /reviews/search/?restaurant_name=McDonalds
+    API->>DBMS: Begin T2
+    DBMS->>Reviews: T2 searches reviews
+
+    Reviews-->>DBMS: T2 does not see review 10 because it read uncommitted delete
+    DBMS-->>API: Commit T2
+    API-->>UserB: Search results missing review 10
+
+    DBMS->>Reviews: T1 rolls back delete
+    DBMS-->>API: Rollback T1
+    API-->>UserA: Delete failed
+
+    Note over Reviews: UserB saw data from a delete that never actually committed
+```
+
+This is a dirty read because one transaction reads the effects of another transaction before that other transaction commits. In this example, the search transaction sees the uncommitted delete from the delete transaction. Read Uncommitted isolation allows dirty reads, so this problem could happan at that level. Read Committed prevents dirty reads because a transaction can only read a data that has already been committed.
+
+
+To Prevent this, our service should not use Read Uncommitted isolation and should default to Read Committed isolation level, as it is appropriate for this case and will prevent users from seeing uncommitted deletes or uncommitted updates. This means review search results will only reflect changes that have actually been committed to the database.
