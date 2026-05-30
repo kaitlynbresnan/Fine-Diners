@@ -31,5 +31,5 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    op.drop_constraint('fk_reviews_restaurant_id', 'reviews', type='foreignkey')
+    op.drop_constraint('fk_reviews_restaurant_id', 'reviews', type_='foreignkey')
     op.drop_column('reviews', 'restaurant_id')
