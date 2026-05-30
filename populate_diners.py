@@ -29,19 +29,19 @@ with engine.begin() as conn:
             "name": fake.company() + " Restaurant",
             "location": fake.city(),
             "cuisine": np.random.choice(cuisines,p=[
-            0.20,  # American
-            0.07,  # Korean
-            0.15,  # Mexican
-            0.09,  # Chinese
-            0.08,  # Japanese
-            0.08,  # Indian
-            0.06,  # Thai
+            0.18,  # American
+            0.06,  # Korean
+            0.13,  # Mexican
+            0.08,  # Chinese
+            0.07,  # Japanese
+            0.07,  # Indian
+            0.05,  # Thai
             0.03,  # French
             0.05,  # Mediterranean
-            0.16,  # Italian
+            0.15,  # Italian
             0.03,  # Peruvian
-            0.07,  # Vietnamese
-            0.01  # Vegan
+            0.06,  # Vietnamese
+            0.04  # Vegan
             ]),
             "price_range": np.random.randint(1, 5),
             "allergen_free_options": np.random.choice([True, False], p=[0.30, 0.7]),
