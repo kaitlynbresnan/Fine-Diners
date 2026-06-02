@@ -17,6 +17,22 @@ The Review Reports table contains fewer rows because only a small percentage of 
 
 This distribution creates a realistic workload for a restaurant review service while also providing sufficient data to test search queries, joins, aggregations, and more. 
 
+
 # Performance Results of Hitting Endpoints
+After generating approximately 1,000,000 rows of data in our local PostgreSQL database, we tested the performance of several API endpoints. Endpoint execution times were measured using the Unix `time` command while making requests against the local API instance.
+
+| Endpoint | Execution Time |
+| --- | --- |
+| GET /restaurants/top/?limit=10 | 220 ms |
+| GET /reviews/search/?page_size=10 | 174 ms |
+| GET /restaurants/1/analytics | 71 ms |
+| GET /profile/?user_id=user_1 | 15 ms |
+
+The slowest endpoint was: `GET /restaurants/top/?limit=10` with an execution time of approximately 220 ms.
+
+This was expected because the endpoint performs a join between the `restaurants` and `reviews` tables, computes multiple aggregate values using `AVG()`, groups results by restaurant, sorts the aggregated data, and returns the highest rated restaurants. Since the `reviews` table contains 900,000 rows, this endpoint performs more work than the others. 
+
 
 # Performance Tuning
+
+
