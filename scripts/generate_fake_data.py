@@ -106,7 +106,6 @@ def main():
             INSERT INTO review_reports (report_id, review_id, user_id, reason)
             VALUES (:report_id, :review_id, :user_id, :reason)
         """), reports)
-
         print("Adding owner replies...")
         replies = []
         for i in range(1, NUM_REPLIES + 1):
