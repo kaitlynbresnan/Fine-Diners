@@ -1,5 +1,5 @@
 # Fake Data Modeling
-The fake data for our service was generated using a Python script called `generate_fake_data.py`. The script uses the Faker library to generate realistic restaurant names, locations, review text, and user identifiers. Randomized values were used for ratings, cuisine types, report reasons, and restaurant attributes.
+The fake data for our service was generated using a Python script called [generate_fake_data.py](https://github.com/kaitlynbresnan/Fine-Diners/blob/main/scripts/generate_fake_data.py). The script uses the Faker library to generate realistic restaurant names, locations, review text, and user identifiers. Randomized values were used for ratings, cuisine types, report reasons, and restaurant attributes.
 
 Data Distribtuion:
 | Table | Number of Rows |
@@ -10,6 +10,12 @@ Data Distribtuion:
 | Owner Replies | 20,000 |
 | Saved Restaurants | 20,000 |
 | Total | 1,000,000 |
+
+We chose this distribution because a restaurant review platform will naturally contain far more reviews than restaurants. A restaurant may receive hundreds or thousands of reviews, making the reviews table the largest and fastest growing table in the system. 
+
+The Review Reports table contains fewer rows because only a small percentage of reviews are reported by users. Similarly, the Owner Replies table contains fewer rows because restaurant owners don't respond to every review. The Saved Restaurants table is also relatively small because users typically browse many restaurants but save only a subset of them for future reference. 
+
+This distribution creates a realistic workload for a restaurant review service while also providing sufficient data to test search queries, joins, aggregations, and more. 
 
 # Performance Results of Hitting Endpoints
 
