@@ -1,7 +1,12 @@
 import random
 from faker import Faker
 import sqlalchemy
+import os
+
+os.environ["API_KEY"] = "brat"
+os.environ["POSTGRES_URI"] = "postgresql+psycopg://myuser:mypassword@localhost:5432/mydatabase"
 from src import database as db
+
 
 fake = Faker()
 
