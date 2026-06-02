@@ -5,7 +5,11 @@ Data Distribtuion:
 | Table | Number of Rows |
 | --- | --- |
 | Restaurants | 10,000 |
-
+| Reviews | 900,000 |
+| Review Reports | 50,000 |
+| Owner Replies | 20,000 |
+| Saved Restaurants | 20,000 |
+| Total | 1,000,000 |
 
 # Performance Results of Hitting Endpoints
 
