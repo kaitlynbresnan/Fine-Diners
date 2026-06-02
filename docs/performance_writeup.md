@@ -23,10 +23,14 @@ After generating approximately 1,000,000 rows of data in our local PostgreSQL da
 
 | Endpoint | Execution Time |
 | --- | --- |
-| GET /restaurants/top/?limit=10 | 220 ms |
-| GET /reviews/search/?page_size=10 | 174 ms |
+| GET /restaurants/top | 220 ms |
 | GET /restaurants/1/analytics | 71 ms |
+| GET /reviews/search | 174 ms |
+| GET /reviews/1 | 67 ms |
+| POST /reviews/1/reply | 56 ms |
+| POST /reviews/1/report | 30 ms |
 | GET /profile/?user_id=user_1 | 15 ms |
+| DELETE /profile/restaurants/1 | 49 ms |
 
 The slowest endpoint was: `GET /restaurants/top/?limit=10` with an execution time of approximately 220 ms.
 
