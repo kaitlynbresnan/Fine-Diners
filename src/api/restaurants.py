@@ -152,7 +152,7 @@ def search_restaurants(
           AND (:allergen_free IS NULL OR r.allergen_free_options = :allergen_free)
           AND (:allows_animals IS NULL OR r.allows_animals = :allows_animals)
         GROUP BY r.restaurant_id
-        HAVING (:min_pricing IS NULL OR AVG(rv.pricing_score) >= :min_pricing)
+        HAVING (:min_pricing IS NULL OR AVG(rv.pricing_score) >= :min_pricing::numeric)
         ORDER BY r.price_range ASC, average_rating DESC NULLS LAST
         LIMIT :page_size OFFSET :offset
     """
