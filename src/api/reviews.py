@@ -18,7 +18,6 @@ class ReviewRequest(BaseModel):
     service_score: Optional[int] = Field(default=None, ge=0, le=5)
     romantic_score: Optional[int] = Field(default=None, ge=0, le=5)
     pricing_score: Optional[int] = Field(default=None, ge=0, le=5)
-    photos: List[str] = Field(default_factory=list, max_length=5)
 
 
 class ReviewResponse(BaseModel):
@@ -56,8 +55,7 @@ def write_review(review_id: int, review: ReviewRequest):
                     food_quality_score,
                     service_score,
                     romantic_score,
-                    pricing_score,
-                    photos
+                    pricing_score
                 )
                 VALUES (
                     :review_id,
@@ -67,8 +65,7 @@ def write_review(review_id: int, review: ReviewRequest):
                     :food_quality_score,
                     :service_score,
                     :romantic_score,
-                    :pricing_score,
-                    :photos
+                    :pricing_score
                 )
                 """
             ),
@@ -81,7 +78,6 @@ def write_review(review_id: int, review: ReviewRequest):
                 "service_score": review.service_score,
                 "romantic_score": review.romantic_score,
                 "pricing_score": review.pricing_score,
-                "photos": ",".join(review.photos),
             },
         )
 
@@ -115,7 +111,6 @@ def edit_review(review_id: int, review: ReviewRequest):
                     service_score = :service_score,
                     romantic_score = :romantic_score,
                     pricing_score = :pricing_score,
-                    photos = :photos,
                     updated_at = CURRENT_TIMESTAMP
                 WHERE review_id = :review_id
                 """
@@ -129,7 +124,6 @@ def edit_review(review_id: int, review: ReviewRequest):
                 "service_score": review.service_score,
                 "romantic_score": review.romantic_score,
                 "pricing_score": review.pricing_score,
-                "photos": ",".join(review.photos),
             },
         )
 
