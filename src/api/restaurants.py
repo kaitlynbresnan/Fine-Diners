@@ -148,7 +148,7 @@ def search_restaurants(
           AND (:allergen_free IS NULL OR r.allergen_free_options = :allergen_free)
           AND (:allows_animals IS NULL OR r.allows_animals = :allows_animals)
         GROUP BY r.restaurant_id
-        HAVING (:min_pricing IS NULL OR COALESCE(AVG(rv.pricing_score), 0) >= :min_pricing::numeric)
+        HAVING (:min_pricing IS NULL OR COALESCE(AVG(rv.pricing_score), 0) >= :min_pricing)
         ORDER BY r.average_price ASC, average_rating DESC NULLS LAST
     """
 
