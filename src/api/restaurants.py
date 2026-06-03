@@ -14,7 +14,7 @@ class RestaurantRequest(BaseModel):
     name: str
     location: str
     cuisine: str
-    price_range: int = Field(ge=0, le=100)
+    average_price: int = Field(ge=0, le=100)
     allergen_free_options: bool
     allows_animals: bool
 
@@ -29,7 +29,7 @@ class RestaurantSearchResult(BaseModel):
     name: str
     location: str
     cuisine: str
-    price_range: int
+    average_price: int
     allergen_free_options: bool
     allows_animals: bool
     average_rating: Optional[float] = None
@@ -89,7 +89,7 @@ def add_restaurant(restaurant: RestaurantRequest):
                     name,
                     location,
                     cuisine,
-                    price_range,
+                    average_price,
                     allergen_free_options,
                     allows_animals
                 )
@@ -97,7 +97,7 @@ def add_restaurant(restaurant: RestaurantRequest):
                     :name,
                     :location,
                     :cuisine,
-                    :price_range,
+                    :average_price,
                     :allergen_free_options,
                     :allows_animals
                 )
@@ -108,7 +108,7 @@ def add_restaurant(restaurant: RestaurantRequest):
                 "name": restaurant.name,
                 "location": restaurant.location,
                 "cuisine": restaurant.cuisine,
-                "price_range": restaurant.price_range,
+                "average_price": restaurant.average_price,
                 "allergen_free_options": restaurant.allergen_free_options,
                 "allows_animals": restaurant.allows_animals,
             },
@@ -125,18 +125,14 @@ def search_restaurants(
     allergen_free: Optional[bool] = None,
     allows_animals: Optional[bool] = None,
     min_pricing: Optional[float] = None,
-    search_page: int = Query(default=1, ge=1),
-    page_size: int = Query(default=10, ge=1, le=50),
 ):
-    offset = (search_page - 1) * page_size
-
     query = """
         SELECT
             r.restaurant_id,
             r.name,
             r.location,
             r.cuisine,
-            r.price_range,
+            r.average_price,
             r.allergen_free_options,
             r.allows_animals,
             AVG(rv.rating) AS average_rating,
@@ -148,13 +144,12 @@ def search_restaurants(
         LEFT JOIN reviews rv ON r.restaurant_id = rv.restaurant_id
         WHERE (:restaurant_name = '' OR r.name ILIKE :restaurant_name_filter)
           AND (:cuisine = '' OR r.cuisine ILIKE :cuisine_filter)
-          AND (:price_max IS NULL OR r.price_range <= :price_max)
+          AND (:price_max IS NULL OR r.average_price <= :price_max)
           AND (:allergen_free IS NULL OR r.allergen_free_options = :allergen_free)
           AND (:allows_animals IS NULL OR r.allows_animals = :allows_animals)
         GROUP BY r.restaurant_id
-        HAVING (:min_pricing IS NULL OR AVG(rv.pricing_score) >= :min_pricing::numeric)
-        ORDER BY r.price_range ASC, average_rating DESC NULLS LAST
-        LIMIT :page_size OFFSET :offset
+        HAVING (:min_pricing IS NULL OR COALESCE(AVG(rv.pricing_score), 0) >= :min_pricing::numeric)
+        ORDER BY r.average_price ASC, average_rating DESC NULLS LAST
     """
 
     params = {
@@ -166,19 +161,12 @@ def search_restaurants(
         "allergen_free": allergen_free,
         "allows_animals": allows_animals,
         "min_pricing": min_pricing,
-        "page_size": page_size,
-        "offset": offset,
     }
 
     with db.engine.begin() as connection:
         rows = connection.execute(sqlalchemy.text(query), params).mappings().all()
 
-    next_page = f"/restaurants/search/?search_page={search_page + 1}" if len(rows) == page_size else None
-    previous_page = f"/restaurants/search/?search_page={search_page - 1}" if search_page > 1 else None
-
     return RestaurantSearchResponse(
-        previous=previous_page,
-        next=next_page,
         results=[RestaurantSearchResult(**dict(row)) for row in rows],
     )
 
@@ -194,7 +182,7 @@ def get_top_restaurants(limit: int = Query(default=10, ge=1, le=10)):
                     r.name,
                     r.location,
                     r.cuisine,
-                    r.price_range,
+                    r.average_price,
                     r.allergen_free_options,
                     r.allows_animals,
                     AVG(rv.rating) AS average_rating,
