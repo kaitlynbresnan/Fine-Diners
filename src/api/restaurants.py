@@ -36,7 +36,6 @@ class RestaurantSearchResult(BaseModel):
     food_quality_score: Optional[float] = None
     service_score: Optional[float] = None
     romantic_score: Optional[float] = None
-    pricing_score: Optional[float] = None
 
 
 class RestaurantSearchResponse(BaseModel):
@@ -145,10 +144,10 @@ def search_restaurants(
         WHERE (:restaurant_name = '' OR r.name ILIKE :restaurant_name_filter)
           AND (:cuisine = '' OR r.cuisine ILIKE :cuisine_filter)
           AND (:price_max IS NULL OR r.average_price <= :price_max)
+          AND (:min_price IS NULL OR r.average_price >= :price_min)
           AND (:allergen_free IS NULL OR r.allergen_free_options = :allergen_free)
           AND (:allows_animals IS NULL OR r.allows_animals = :allows_animals)
         GROUP BY r.restaurant_id
-        HAVING (:min_pricing IS NULL OR COALESCE(AVG(rv.pricing_score), 0) >= :min_pricing)
         ORDER BY r.average_price ASC, average_rating DESC NULLS LAST
     """
 

@@ -161,7 +161,6 @@ class ReviewSearchResult(BaseModel):
     review_id: int
     restaurant_id: Optional[int] = None
     review_name: str
-    user_name: str
     timestamp: str
 
 
@@ -173,7 +172,6 @@ class ReviewSearchResponse(BaseModel):
 
 @router.get("/search/", response_model=ReviewSearchResponse)
 def search_reviews(
-    user_name: str = "",
     restaurant_name: str = "",
     search_page: int = 1,
     page_size: int = 10,
@@ -188,12 +186,10 @@ def search_reviews(
                     rv.review_id,
                     rv.restaurant_id,
                     rv.description AS review_name,
-                    'test_user' AS user_name,
                     rv.created_at::text AS timestamp
                 FROM reviews rv
                 LEFT JOIN restaurants r ON rv.restaurant_id = r.restaurant_id
                 WHERE (:restaurant_name = '' OR r.name ILIKE :restaurant_name_filter)
-                  AND (:user_name = '' OR 'test_user' ILIKE :user_name_filter)
                 ORDER BY rv.created_at DESC
                 LIMIT :page_size OFFSET :offset
                 """
@@ -201,8 +197,6 @@ def search_reviews(
             {
                 "restaurant_name": restaurant_name,
                 "restaurant_name_filter": f"%{restaurant_name}%",
-                "user_name": user_name,
-                "user_name_filter": f"%{user_name}%",
                 "page_size": page_size,
                 "offset": offset,
             },
