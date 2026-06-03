@@ -144,7 +144,7 @@ def search_restaurants(
         WHERE (:restaurant_name = '' OR r.name ILIKE :restaurant_name_filter)
           AND (:cuisine = '' OR r.cuisine ILIKE :cuisine_filter)
           AND (:price_max IS NULL OR r.average_price <= :price_max)
-          AND (:min_price IS NULL OR r.average_price >= :price_min)
+          AND (:min_pricing IS NULL OR r.average_price >= :min_pricing)
           AND (:allergen_free IS NULL OR r.allergen_free_options = :allergen_free)
           AND (:allows_animals IS NULL OR r.allows_animals = :allows_animals)
         GROUP BY r.restaurant_id
