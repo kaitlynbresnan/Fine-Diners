@@ -3,6 +3,7 @@ import sqlalchemy
 from src.api import auth
 from src import database as db
 
+
 router = APIRouter(
     prefix="/admin",
     tags=["admin"],
