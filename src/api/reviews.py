@@ -11,6 +11,7 @@ router = APIRouter(
 
 
 class ReviewRequest(BaseModel):
+    user_id: Optional[str] = None
     restaurant_id: Optional[int] = None
     rating: Optional[int] = Field(default=None, ge=0, le=5)
     description: str = Field(min_length=5, max_length=1000)
@@ -18,6 +19,7 @@ class ReviewRequest(BaseModel):
     service_score: Optional[int] = Field(default=None, ge=0, le=5)
     romantic_score: Optional[int] = Field(default=None, ge=0, le=5)
     pricing_score: Optional[int] = Field(default=None, ge=0, le=5)
+    photos: List[str] = Field(default_factory=list, max_length=5)
 
 
 class ReviewResponse(BaseModel):
@@ -29,6 +31,66 @@ class SuccessResponse(BaseModel):
     success: bool
 
 
+class ReviewSearchResult(BaseModel):
+    review_id: int
+    restaurant_id: Optional[int] = None
+    review_name: str
+    user_name: str
+    timestamp: str
+
+
+class ReviewSearchResponse(BaseModel):
+    previous: Optional[str] = None
+    next: Optional[str] = None
+    results: List[ReviewSearchResult]
+
+
+class ReplyRequest(BaseModel):
+    user_id: str
+    reply: str
+
+
+class ReplyResponse(BaseModel):
+    reply_id: int
+    success: bool
+
+
+class ReportRequest(BaseModel):
+    user_id: str
+    reason: str
+
+
+class ReportResponse(BaseModel):
+    report_id: int
+    success: bool
+
+
+class ReplyResult(BaseModel):
+    reply_id: int
+    review_id: int
+    user_id: str
+    reply: str
+    created_at: str
+
+
+class RepliesResponse(BaseModel):
+    review_id: int
+    replies: List[ReplyResult]
+
+
+class ReportResult(BaseModel):
+    report_id: int
+    review_id: int
+    user_id: str
+    reason: str
+    created_at: str
+
+
+class ReportsResponse(BaseModel):
+    review_id: int
+    reports: List[ReportResult]
+
+
 @router.post("/{review_id}", response_model=ReviewResponse)
 def write_review(review_id: int, review: ReviewRequest):
     if review.rating is None:
@@ -37,40 +99,39 @@ def write_review(review_id: int, review: ReviewRequest):
             detail="Rating is required",
         )
 
-    if review.rating < 0 or review.rating > 5:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Rating must be between 0 and 5",
-        )
-
     with db.engine.begin() as connection:
         connection.execute(
             sqlalchemy.text(
-                                """
+                """
                 INSERT INTO reviews (
                     review_id,
+                    user_id,
                     restaurant_id,
                     rating,
                     description,
                     food_quality_score,
                     service_score,
                     romantic_score,
-                    pricing_score
+                    pricing_score,
+                    photos
                 )
                 VALUES (
                     :review_id,
+                    :user_id,
                     :restaurant_id,
                     :rating,
                     :description,
                     :food_quality_score,
                     :service_score,
                     :romantic_score,
-                    :pricing_score
+                    :pricing_score,
+                    :photos
                 )
                 """
             ),
             {
                 "review_id": review_id,
+                "user_id": review.user_id,
                 "restaurant_id": review.restaurant_id,
                 "rating": review.rating,
                 "description": review.description,
@@ -78,6 +139,7 @@ def write_review(review_id: int, review: ReviewRequest):
                 "service_score": review.service_score,
                 "romantic_score": review.romantic_score,
                 "pricing_score": review.pricing_score,
+                "photos": ",".join(review.photos),
             },
         )
 
@@ -92,18 +154,13 @@ def edit_review(review_id: int, review: ReviewRequest):
             detail="Rating is required",
         )
 
-    if review.rating < 0 or review.rating > 5:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Rating must be between 0 and 5",
-        )
-
     with db.engine.begin() as connection:
         result = connection.execute(
             sqlalchemy.text(
                 """
                 UPDATE reviews
                 SET
+                    user_id = :user_id,
                     restaurant_id = :restaurant_id,
                     rating = :rating,
                     description = :description,
@@ -111,12 +168,14 @@ def edit_review(review_id: int, review: ReviewRequest):
                     service_score = :service_score,
                     romantic_score = :romantic_score,
                     pricing_score = :pricing_score,
+                    photos = :photos,
                     updated_at = CURRENT_TIMESTAMP
                 WHERE review_id = :review_id
                 """
             ),
             {
                 "review_id": review_id,
+                "user_id": review.user_id,
                 "restaurant_id": review.restaurant_id,
                 "rating": review.rating,
                 "description": review.description,
@@ -124,6 +183,7 @@ def edit_review(review_id: int, review: ReviewRequest):
                 "service_score": review.service_score,
                 "romantic_score": review.romantic_score,
                 "pricing_score": review.pricing_score,
+                "photos": ",".join(review.photos),
             },
         )
 
@@ -157,21 +217,10 @@ def delete_review(review_id: int):
 
     return SuccessResponse(success=True)
 
-class ReviewSearchResult(BaseModel):
-    review_id: int
-    restaurant_id: Optional[int] = None
-    review_name: str
-    timestamp: str
-
-
-class ReviewSearchResponse(BaseModel):
-    previous: Optional[str] = None
-    next: Optional[str] = None
-    results: List[ReviewSearchResult]
-
 
 @router.get("/search/", response_model=ReviewSearchResponse)
 def search_reviews(
+    user_name: str = "",
     restaurant_name: str = "",
     search_page: int = 1,
     page_size: int = 10,
@@ -186,10 +235,12 @@ def search_reviews(
                     rv.review_id,
                     rv.restaurant_id,
                     rv.description AS review_name,
+                    COALESCE(rv.user_id, 'test_user') AS user_name,
                     rv.created_at::text AS timestamp
                 FROM reviews rv
                 LEFT JOIN restaurants r ON rv.restaurant_id = r.restaurant_id
                 WHERE (:restaurant_name = '' OR r.name ILIKE :restaurant_name_filter)
+                  AND (:user_name = '' OR COALESCE(rv.user_id, 'test_user') ILIKE :user_name_filter)
                 ORDER BY rv.created_at DESC
                 LIMIT :page_size OFFSET :offset
                 """
@@ -197,6 +248,8 @@ def search_reviews(
             {
                 "restaurant_name": restaurant_name,
                 "restaurant_name_filter": f"%{restaurant_name}%",
+                "user_name": user_name,
+                "user_name_filter": f"%{user_name}%",
                 "page_size": page_size,
                 "offset": offset,
             },
@@ -206,6 +259,58 @@ def search_reviews(
         previous=f"/reviews/search/?search_page={search_page - 1}" if search_page > 1 else None,
         next=f"/reviews/search/?search_page={search_page + 1}" if len(rows) == page_size else None,
         results=[ReviewSearchResult(**dict(row)) for row in rows],
+    )
+
+
+@router.get("/{review_id}/replies", response_model=RepliesResponse)
+def get_review_replies(review_id: int):
+    with db.engine.begin() as connection:
+        rows = connection.execute(
+            sqlalchemy.text(
+                """
+                SELECT
+                    reply_id,
+                    review_id,
+                    user_id,
+                    reply,
+                    created_at::text AS created_at
+                FROM owner_replies
+                WHERE review_id = :review_id
+                ORDER BY created_at DESC
+                """
+            ),
+            {"review_id": review_id},
+        ).mappings().all()
+
+    return RepliesResponse(
+        review_id=review_id,
+        replies=[ReplyResult(**dict(row)) for row in rows],
+    )
+
+
+@router.get("/{review_id}/reports", response_model=ReportsResponse)
+def get_review_reports(review_id: int):
+    with db.engine.begin() as connection:
+        rows = connection.execute(
+            sqlalchemy.text(
+                """
+                SELECT
+                    report_id,
+                    review_id,
+                    user_id,
+                    reason,
+                    created_at::text AS created_at
+                FROM review_reports
+                WHERE review_id = :review_id
+                ORDER BY created_at DESC
+                """
+            ),
+            {"review_id": review_id},
+        ).mappings().all()
+
+    return ReportsResponse(
+        review_id=review_id,
+        reports=[ReportResult(**dict(row)) for row in rows],
     )
 
 
@@ -229,26 +334,44 @@ def get_review(review_id: int):
                 detail="Review not found",
             )
 
-    return dict(row)
+        replies = connection.execute(
+            sqlalchemy.text(
+                """
+                SELECT
+                    reply_id,
+                    review_id,
+                    user_id,
+                    reply,
+                    created_at::text AS created_at
+                FROM owner_replies
+                WHERE review_id = :review_id
+                ORDER BY created_at DESC
+                """
+            ),
+            {"review_id": review_id},
+        ).mappings().all()
 
-class ReplyRequest(BaseModel):
-    user_id: str
-    reply: str
+        reports = connection.execute(
+            sqlalchemy.text(
+                """
+                SELECT
+                    report_id,
+                    review_id,
+                    user_id,
+                    reason,
+                    created_at::text AS created_at
+                FROM review_reports
+                WHERE review_id = :review_id
+                ORDER BY created_at DESC
+                """
+            ),
+            {"review_id": review_id},
+        ).mappings().all()
 
-
-class ReplyResponse(BaseModel):
-    reply_id: int
-    success: bool
-
-
-class ReportRequest(BaseModel):
-    user_id: str
-    reason: str
-
-
-class ReportResponse(BaseModel):
-    report_id: int
-    success: bool
+    review_dict = dict(row)
+    review_dict["replies"] = [dict(reply) for reply in replies]
+    review_dict["reports"] = [dict(report) for report in reports]
+    return review_dict
 
 
 @router.post("/{review_id}/reply", response_model=ReplyResponse)
